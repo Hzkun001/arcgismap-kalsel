@@ -1,66 +1,65 @@
 import { useEffect, useRef } from "react";
 import "./App.css";
+
 import MapView from "@arcgis/core/views/MapView";
 import Map from "@arcgis/core/Map";
 import Graphic from "@arcgis/core/Graphic";
 import GraphicsLayer from "@arcgis/core/layers/GraphicsLayer";
 
+// ✅ Kelas resmi ArcGIS (TS-friendly)
+import Point from "@arcgis/core/geometry/Point";
+import SimpleMarkerSymbol from "@arcgis/core/symbols/SimpleMarkerSymbol";
+
 function App() {
-  const mapRef = useRef(null);
+  const mapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!mapRef.current) return;
 
-    // Lokasi dari Google Maps (lat, lng) → ArcGIS [lng, lat]
+    // Koordinat dari Google Maps (lat, lng)
     const gmapsLat = -3.48415;
     const gmapsLng = 114.83371;
 
-    const map = new Map({
-      basemap: "osm",
-    });
+    const map = new Map({ basemap: "osm" });
 
     const view = new MapView({
       map,
       container: mapRef.current,
-      center: [gmapsLng, gmapsLat],
+      center: [gmapsLng, gmapsLat], // ArcGIS: [lng, lat]
       zoom: 17,
     });
 
-    // Buat layer untuk marker
+    // Layer untuk graphic
     const graphicsLayer = new GraphicsLayer();
     map.add(graphicsLayer);
 
-    // Marker point
-    const point = {
-      type: "point",
+    // ✅ Geometry pakai kelas Point (bukan object literal)
+    const point = new Point({
       longitude: gmapsLng,
       latitude: gmapsLat,
-    };
+      // spatialReference: { wkid: 4326 }, // opsional, default 4326
+    });
 
-    // Simbol marker
-    const markerSymbol = {
-      type: "simple-marker",
+    // ✅ Symbol pakai kelas SimpleMarkerSymbol
+    const markerSymbol = new SimpleMarkerSymbol({
       color: "red",
-      size: "12px",
-      outline: {
-        color: "white",
-        width: 1,
-      },
-    };
+      size: 12, // bisa number atau "12px"
+      outline: { color: "white", width: 1 },
+    });
 
     // Data popup
     const attributes = {
       name: "Lokasi Kantor Gubernur Kalsel",
-      description: "Jalan Aneka Tambang, Trikora, Palam, Kec. Cemp., Kota Banjar Baru, Kalimantan Selatan 70114",
+      description:
+        "Jalan Aneka Tambang, Trikora, Palam, Kec. Cemp., Kota Banjar Baru, Kalimantan Selatan 70114",
     };
 
-    // Template popup
     const popupTemplate = {
       title: "{name}",
       content: "{description}",
     };
 
-    // Gabungkan jadi Graphic
+    // Graphic final
     const pointGraphic = new Graphic({
       geometry: point,
       symbol: markerSymbol,
@@ -68,10 +67,12 @@ function App() {
       popupTemplate,
     });
 
-    // Tambahkan ke layer
     graphicsLayer.add(pointGraphic);
 
-    return () => view && view.destroy();
+    return () => {
+      // bereskan resource saat unmount
+      view?.destroy();
+    };
   }, []);
 
   return <div className="viewDiv" ref={mapRef}></div>;
