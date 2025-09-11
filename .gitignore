@@ -1,0 +1,45 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Vite / Build
+dist/
+build/
+.vite/
+.cache/
+.parcel-cache/
+
+# Next/Nuxt/Jekyll (jaga-jaga)
+.next/
+.nuxt/
+.out/
+
+# Testing/Coverage
+coverage/
+.vitest/
+
+# Env / Secrets
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+.vscode/*
+
+# Lint/Tools cache
+.eslintcache
+.stylelintcache
+.turbo/
+.pnpm-store/
+
+# Vercel
+.vercel/
