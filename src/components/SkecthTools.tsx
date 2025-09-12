@@ -12,7 +12,6 @@ type Props = {
 };
 
 export default function CollapsibleSketch({ map, view, corner = "top-right" }: Props) {
-  const [open, setOpen] = useState(false);           // state show/hide panel
   const layerRef = useRef<GraphicsLayer | null>(null);
   const sketchRef = useRef<Sketch | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);

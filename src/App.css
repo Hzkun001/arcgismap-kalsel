@@ -21,8 +21,8 @@ html, body, #root, .app {
 .sketch-toggle {
   position: absolute;
   z-index: 20;
-  height: 44px;                /* touch target min 44px */
-  width: 44px;
+  height: 44px;
+  /*touchtargetmin44px*/width: 44px;
   border-radius: 9999px;
   border: none;
   cursor: pointer;
@@ -32,7 +32,12 @@ html, body, #root, .app {
   place-items: center;
   font-size: 18px;
   transition: transform .15s ease, box-shadow .2s ease;
-  touch-action: manipulation;  /* kurangi delay klik */
+  touch-action: manipulation;
+    /* kurangi delay klik */:;
+  -webkit-border-radius: 9999px;
+  -moz-border-radius: 9999px;
+  -ms-border-radius: 9999px;
+  -o-border-radius: 9999px;
 }
 .sketch-toggle:hover { transform: translateY(-1px); }
 .sketch-toggle:active { transform: translateY(0); }

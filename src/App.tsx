@@ -5,7 +5,6 @@ import type { MarkerItem } from "./components/MarkerLayer";
 import SketchTools from "./components/SkecthTools";
 import Map from "@arcgis/core/Map";
 import MapView from "@arcgis/core/views/MapView";
-import SimpleFillSymbol from "@arcgis/core/symbols/SimpleFillSymbol";
 import MeasurementTools from "./components/MeasurementTools";
 import "./App.css";
 
@@ -28,15 +27,6 @@ export default function App() {
       color: "red",
     },
   ];
-
-  // Contoh Graphic tambahan (Polygon denah)
-  const graphics = useMemo(() => {
-
-    const fill = new SimpleFillSymbol({
-      color: [0, 0, 255, 0.2],
-      outline: { color: [0, 0, 255, 1], width: 2 },
-    });
-  }, []);
 
   return (
     <div className="app">
