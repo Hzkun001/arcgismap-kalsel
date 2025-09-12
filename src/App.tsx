@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import ArcMap from "./components/ArcMap";
 import MarkerLayer from "./components/MarkerLayer";
 import type { MarkerItem } from "./components/MarkerLayer";
