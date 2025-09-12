@@ -1,14 +1,15 @@
 /* ====== Layout dasar ====== */
 html, body, #root, .app {
-  height: 100dvh;              /* lebih stabil dari 100% di mobile */
+  min-height: 100vh;
+  height: 100dvh;
   margin: 0;
 }
 
 .viewDiv {
   height: 100%;
   width: 100%;
-  position: relative;          /* penting: anak absolut nempel ke map */
-  overflow: hidden;            /* cegah scroll ganda */
+  position: relative;
+  overflow: hidden;
 }
 
 /* ====== Util posisi ====== */
@@ -20,9 +21,9 @@ html, body, #root, .app {
 /* ====== Tombol bulat ====== */
 .sketch-toggle {
   position: absolute;
-  z-index: 20;
-  height: 44px;
-  /*touchtargetmin44px*/width: 44px;
+  z-index: 100;
+  height: 44px;                 /* konsisten touch target */
+  width: 44px;
   border-radius: 9999px;
   border: none;
   cursor: pointer;
@@ -33,16 +34,11 @@ html, body, #root, .app {
   font-size: 18px;
   transition: transform .15s ease, box-shadow .2s ease;
   touch-action: manipulation;
-    /* kurangi delay klik */:;
-  -webkit-border-radius: 9999px;
-  -moz-border-radius: 9999px;
-  -ms-border-radius: 9999px;
-  -o-border-radius: 9999px;
 }
-.sketch-toggle:hover { transform: translateY(-1px); }
+.sketch-toggle:hover { transform: translateY(-2px); }
 .sketch-toggle:active { transform: translateY(0); }
 .sketch-toggle:focus-visible {
-  outline: 2px solid #2563eb; /* biru */
+  outline: 2px solid #2563eb;
   outline-offset: 2px;
   box-shadow: 0 0 0 4px rgba(37,99,235,.2);
 }
@@ -50,9 +46,9 @@ html, body, #root, .app {
 /* ====== Panel Sketch (desktop default) ====== */
 .sketch-panel {
   position: absolute;
-  z-index: 30;
+  z-index: 101;
   background: #fff;
-  width: clamp(360px, 38vw, 460px);
+  width: clamp(320px, 38vw, 460px);
   max-height: min(70svh, 560px);
   overflow: auto;
   box-shadow: 0 12px 32px rgba(0,0,0,.22);
@@ -60,57 +56,73 @@ html, body, #root, .app {
   padding: 10px;
   display: grid;
   gap: 8px;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Animasi masuk/keluar simpel */
+/* Animasi simple */
 .sketch-panel[data-state="closed"] { opacity: 0; pointer-events: none; transform: translateY(6px); }
 .sketch-panel[data-state="open"]   { opacity: 1; pointer-events: auto; transform: translateY(0); transition: opacity .18s ease, transform .18s ease; }
 
-/* ====== Backdrop untuk mobile (klik untuk tutup) ====== */
+/* Backdrop */
 .sketch-backdrop {
   position: absolute;
   inset: 0;
   background: rgba(0,0,0,.25);
-  z-index: 25;
+  z-index: 80;
   opacity: 0;
   pointer-events: none;
   transition: opacity .18s ease;
 }
 .sketch-backdrop[data-state="open"] { opacity: 1; pointer-events: auto; }
 
-/* ====== Mode Mobile ≤ 768px: jadi bottom-sheet ====== */
+/* ====== Bar aksi sticky di bagian bawah panel ====== */
+.sketch-actions {
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(to top, #fff 75%, rgba(255,255,255,0));
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+/* ====== Mode Mobile ≤ 768px: bottom-sheet ramping ====== */
 @media (max-width: 768px) {
-  .sketch-toggle {
-    height: 48px; width: 48px; font-size: 20px;
-  }
+  .sketch-toggle { height: 48px; width: 48px; font-size: 20px; }
 
   .sketch-panel {
     left: 0; right: 0;
     margin: 0 auto;
-    width: min(100%, 560px);
-    /* Tinggi sheet: 60% layar, tetap responsif */
-    max-height: 60svh;
+    width: min(92vw, 520px);     /* ⬅️ lebih sempit dari 100% */
+    max-height: 45svh;           /* ⬅️ dari 60svh → 45svh (bisa 40svh kalau perlu) */
     border-radius: 16px 16px 0 0;
-    padding: 12px;
-    /* jadi bottom sheet */
+    padding: 10px 12px;
     bottom: 0;
-    transform: translateY(100%); /* hidden by default */
+    transform: translateY(100%);
     transition: transform .22s ease, opacity .18s ease;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
   }
+  .sketch-panel[data-state="open"] { transform: translateY(0); }
+  .sketch-panel[data-state="closed"] { pointer-events: none; }
 
-  .sketch-panel[data-state="open"] {
-    transform: translateY(0);
+  /* Perkecil UI default ArcGIS di dalam panel */
+  .sketch-panel .esri-widget,
+  .sketch-panel .esri-ui,
+  .sketch-panel .esri-sketch {
+    font-size: 12px;            /* defaultnya cukup besar */
+    line-height: 1.2;
   }
-
-  /* Saat tertutup, biar ga ganggu klik map */
-  .sketch-panel[data-state="closed"] {
-    pointer-events: none;
+  .sketch-panel .esri-button {
+    padding: 4px 8px;           /* tombol bawaan jadi lebih kecil */
+    min-height: 32px;
   }
 }
 
-/* ====== Preferensi aksesibilitas ====== */
+/* Landscape: makin ramping */
+@media (max-height: 540px) and (orientation: landscape) {
+  .sketch-panel { max-height: 36svh; }
+}
+
+/* Aksesibilitas */
 @media (prefers-reduced-motion: reduce) {
-  .sketch-panel, .sketch-toggle, .sketch-backdrop {
-    transition: none !important;
-  }
+  .sketch-panel, .sketch-toggle, .sketch-backdrop { transition: none !important; }
 }
