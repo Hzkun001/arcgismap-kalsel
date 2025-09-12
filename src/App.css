@@ -1,5 +1,111 @@
+/* ====== Layout dasar ====== */
+html, body, #root, .app {
+  height: 100dvh;              /* lebih stabil dari 100% di mobile */
+  margin: 0;
+}
+
 .viewDiv {
-  height: 100vh;
-  background-color: lightblue;
-  
+  height: 100%;
+  width: 100%;
+  position: relative;          /* penting: anak absolut nempel ke map */
+  overflow: hidden;            /* cegah scroll ganda */
+}
+
+/* ====== Util posisi ====== */
+.top-3 { top: calc(12px + env(safe-area-inset-top)); }
+.right-3 { right: calc(12px + env(safe-area-inset-right)); }
+.left-3 { left: calc(12px + env(safe-area-inset-left)); }
+.bottom-3 { bottom: calc(12px + env(safe-area-inset-bottom)); }
+
+/* ====== Tombol bulat ====== */
+.sketch-toggle {
+  position: absolute;
+  z-index: 20;
+  height: 44px;                /* touch target min 44px */
+  width: 44px;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0,0,0,.18);
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  transition: transform .15s ease, box-shadow .2s ease;
+  touch-action: manipulation;  /* kurangi delay klik */
+}
+.sketch-toggle:hover { transform: translateY(-1px); }
+.sketch-toggle:active { transform: translateY(0); }
+.sketch-toggle:focus-visible {
+  outline: 2px solid #2563eb; /* biru */
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(37,99,235,.2);
+}
+
+/* ====== Panel Sketch (desktop default) ====== */
+.sketch-panel {
+  position: absolute;
+  z-index: 30;
+  background: #fff;
+  width: clamp(360px, 38vw, 460px);
+  max-height: min(70svh, 560px);
+  overflow: auto;
+  box-shadow: 0 12px 32px rgba(0,0,0,.22);
+  border-radius: 12px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+/* Animasi masuk/keluar simpel */
+.sketch-panel[data-state="closed"] { opacity: 0; pointer-events: none; transform: translateY(6px); }
+.sketch-panel[data-state="open"]   { opacity: 1; pointer-events: auto; transform: translateY(0); transition: opacity .18s ease, transform .18s ease; }
+
+/* ====== Backdrop untuk mobile (klik untuk tutup) ====== */
+.sketch-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,.25);
+  z-index: 25;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease;
+}
+.sketch-backdrop[data-state="open"] { opacity: 1; pointer-events: auto; }
+
+/* ====== Mode Mobile ≤ 768px: jadi bottom-sheet ====== */
+@media (max-width: 768px) {
+  .sketch-toggle {
+    height: 48px; width: 48px; font-size: 20px;
+  }
+
+  .sketch-panel {
+    left: 0; right: 0;
+    margin: 0 auto;
+    width: min(100%, 560px);
+    /* Tinggi sheet: 60% layar, tetap responsif */
+    max-height: 60svh;
+    border-radius: 16px 16px 0 0;
+    padding: 12px;
+    /* jadi bottom sheet */
+    bottom: 0;
+    transform: translateY(100%); /* hidden by default */
+    transition: transform .22s ease, opacity .18s ease;
+  }
+
+  .sketch-panel[data-state="open"] {
+    transform: translateY(0);
+  }
+
+  /* Saat tertutup, biar ga ganggu klik map */
+  .sketch-panel[data-state="closed"] {
+    pointer-events: none;
+  }
+}
+
+/* ====== Preferensi aksesibilitas ====== */
+@media (prefers-reduced-motion: reduce) {
+  .sketch-panel, .sketch-toggle, .sketch-backdrop {
+    transition: none !important;
+  }
 }
