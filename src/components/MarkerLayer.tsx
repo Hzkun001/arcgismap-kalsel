@@ -11,29 +11,33 @@ export type MarkerItem = {
   lat: number;
   title?: string;
   description?: string;
-  color?: string | number[]; // fleksibel
+  color?: string | number[];
 };
 
 type MarkerLayerProps = {
   map: Map | null;
   markers: MarkerItem[];
-  autoFit?: boolean; // fit kamera ke semua marker
-  view?: __esri.MapView; // kalau mau autoFit perlu view
+  autoFit?: boolean;
+  view?: __esri.MapView;
+  suppressAutoGoToRef?: React.MutableRefObject<boolean>; // guard
 };
 
-export default function MarkerLayer({ map, markers, autoFit = true, view }: MarkerLayerProps) {
+export default function MarkerLayer({
+  map,
+  markers,
+  autoFit = true,
+  view,
+  suppressAutoGoToRef,
+}: MarkerLayerProps) {
   const layerRef = useRef<GraphicsLayer | null>(null);
 
   useEffect(() => {
     if (!map) return;
-
-    // Buat layer sekali
     const layer = new GraphicsLayer();
     map.add(layer);
     layerRef.current = layer;
 
     return () => {
-      // Hapus layer ketika komponen unmount / map ganti
       map.remove(layer);
       layer.destroy();
       layerRef.current = null;
@@ -44,10 +48,8 @@ export default function MarkerLayer({ map, markers, autoFit = true, view }: Mark
     const layer = layerRef.current;
     if (!layer) return;
 
-    // Bersihkan marker lama
     layer.removeAll();
 
-    // Tambah marker baru
     const graphics = markers.map((m) => {
       const point = new Point({ longitude: m.lng, latitude: m.lat });
       const symbol = new SimpleMarkerSymbol({
@@ -64,19 +66,25 @@ export default function MarkerLayer({ map, markers, autoFit = true, view }: Mark
           name: m.title,
           description: m.description,
         },
-        popupTemplate: m.title || m.description
-          ? { title: "{name}", content: "{description}" }
-          : undefined,
+        popupTemplate:
+          m.title || m.description
+            ? { title: "{name}", content: "{description}" }
+            : undefined,
       });
     });
 
     layer.addMany(graphics);
 
-    // Auto-fit kamera ke semua marker
-    if (autoFit && view && graphics.length > 0) {
+    // auto-fit hanya kalau tidak sedang suppress
+    if (
+      autoFit &&
+      view &&
+      graphics.length > 0 &&
+      !suppressAutoGoToRef?.current
+    ) {
       view.goTo(graphics).catch(() => {});
     }
-  }, [markers, view]);
+  }, [markers, view, autoFit, suppressAutoGoToRef]);
 
-  return null; // Layer tidak merender elemen DOM
+  return null;
 }
