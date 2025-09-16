@@ -64,7 +64,7 @@ export default function App() {
       {/* Locate control */}
       <LocateControl
         view={view}
-        corner="bottom-left"
+        corner="top-left"
         zoom={11}
         useHeading={true}
         onBeforeLocate={() => {
