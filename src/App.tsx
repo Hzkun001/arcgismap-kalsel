@@ -38,8 +38,8 @@ export default function App() {
     <div className="app">
       <ArcMap
         center={center}
-        zoom={10}
-        basemap="hybrid"
+        zoom={15}
+        basemap="osm"
         onReady={({ map, view }) => {
           setMap(map);
           setView(view);
