@@ -14,14 +14,13 @@ import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import LabelClass from "@arcgis/core/layers/support/LabelClass";
 import Graphic from "@arcgis/core/Graphic";
 import Polygon from "@arcgis/core/geometry/Polygon";
-import type { SimpleFillSymbolProperties } from "@arcgis/core/symbols";
 
-// Pastikan tsconfig.json punya: "resolveJsonModule": true
+// ⬇️ Pastikan tsconfig.json punya: "resolveJsonModule": true
 import batasObj from "./assets/data/batas_kota.json";
 
 import "./App.css";
 
-// helper: map tipe EsriJSON -> tipe client-side FeatureLayer
+// Map tipe field EsriJSON -> tipe singkat JS API
 const esriTypeToJsType = (t?: string) => {
   switch ((t || "").toLowerCase()) {
     case "esrifieldtypeoid": return "oid";
@@ -66,14 +65,12 @@ export default function App() {
           setView(view);
 
           try {
-            const json = batasObj as any; // EsriJSON FeatureSet
+            const json = batasObj as any; // EsriJSON FeatureSet export
             const spatialReference = json.spatialReference ?? { wkid: 4326 };
-            const geometryTypeRaw: string = json.geometryType ?? "esriGeometryPolygon";
-            const geometryType = geometryTypeRaw.replace("esriGeometry", "").toLowerCase(); // "polygon"
 
             console.log("Feature count dari JSON:", json.features?.length);
 
-            // 1) Pastikan geometry valid & filter yang kosong
+            // 1) Filter geometry valid (punya rings)
             const rawFeatures: any[] = Array.isArray(json.features) ? json.features : [];
             const validFeatures = rawFeatures.filter((f) => {
               const g = f?.geometry;
@@ -82,25 +79,19 @@ export default function App() {
             console.log("Valid features (geometry OK):", validFeatures.length);
 
             // 2) Konversi ke Graphic[]
-            const source: __esri.Graphic[] = validFeatures.map((feat: any, i: number) =>
+            const source = validFeatures.map((feat: any, i: number) =>
               new Graphic({
-                attributes: {
-                  OBJECTID: i + 1, // bikin OID sendiri
-                  ...(feat.attributes ?? {}),
-                },
-                geometry:
-                  geometryType === "polygon"
-                    ? new Polygon({ rings: feat.geometry.rings, spatialReference })
-                    : ({
-                        ...feat.geometry,
-                        spatialReference,
-                      } as any),
+                attributes: { OBJECTID: i + 1, ...(feat.attributes ?? {}) },
+                geometry: new Polygon({
+                  rings: feat.geometry.rings,
+                  spatialReference,
+                }),
               })
-            );
+            ) as __esri.Graphic[];
 
-            // 3) Map fields -> tipe pendek & tambahkan OID kalau belum ada
-            const hasOid = (json.fields ?? []).some((f: any) =>
-              (f.type || "").toLowerCase() === "esrifieldtypeoid"
+            // 3) Map fields & pastikan ada OID
+            const hasOid = (json.fields ?? []).some(
+              (f: any) => (f.type || "").toLowerCase() === "esrifieldtypeoid"
             );
             const mappedFields = (json.fields ?? []).map((f: any) => ({
               name: f.name,
@@ -110,44 +101,37 @@ export default function App() {
               domain: f.domain,
               nullable: f.nullable ?? true,
             }));
-
-            if (!hasOid) {
-              mappedFields.unshift({ name: "OBJECTID", type: "oid", alias: "OBJECTID" });
-            }
-
+            if (!hasOid) mappedFields.unshift({ name: "OBJECTID", type: "oid", alias: "OBJECTID" });
             const objectIdField = hasOid ? (json.objectIdField ?? "OBJECTID") : "OBJECTID";
 
-            // 4) Bangun FeatureLayer client-side
+            // 4) FeatureLayer client-side (geometryType literal biar TS happy)
             const batasKota = new FeatureLayer({
               title: "Batas Kota",
               source,
               fields: mappedFields,
               objectIdField,
-              geometryType, // "polygon"
+              geometryType: "polygon", // ← literal, fix TS2322
               spatialReference,
               renderer: {
                 type: "simple",
                 symbol: {
                   type: "simple-fill",
-                  style: "esriSFSNull",
-                  // color: [255, 0, 0, 80],
-                  outline: { color: [77, 242, 32, 0.8], width: 2 },
-                } as SimpleFillSymbolProperties,
+                  color: [0, 120, 255, 0.1], // ubah alpha untuk transparansi
+                  outline: { color: [0, 80, 200, 200], width: 1 }, // outline kontras
+                } as any
               },
               popupTemplate: {
                 title: "{namobj}",
-                content: [
-                  {
-                    type: "fields",
-                    fieldInfos: [
-                      { fieldName: "namobj", label: "Nama Objek" },
-                      { fieldName: "wadmkc", label: "Kecamatan" },
-                      { fieldName: "wadmkk", label: "Kab/Kota" },
-                      { fieldName: "wadmpr", label: "Provinsi" },
-                      { fieldName: "shape_area", label: "Luas (derajat²)" },
-                    ],
-                  },
-                ],
+                content: [{
+                  type: "fields",
+                  fieldInfos: [
+                    { fieldName: "namobj", label: "Nama Objek" },
+                    { fieldName: "wadmkc", label: "Kecamatan" },
+                    { fieldName: "wadmkk", label: "Kab/Kota" },
+                    { fieldName: "wadmpr", label: "Provinsi" },
+                    { fieldName: "shape_area", label: "Luas (derajat²)" },
+                  ],
+                }],
               },
             });
 
@@ -164,10 +148,10 @@ export default function App() {
             batasKota.labelsVisible = true;
             batasKota.labelingInfo = [label];
 
-            // 6) Tambahkan sebagai layer paling bawah (di bawah marker)
+            // 6) Tambahkan layer di bawah marker
             map.add(batasKota, 0);
 
-            // 7) Zoom ke extent layer (jeda kecil biar nggak rebutan kamera)
+            // 7) Zoom ke extent (jeda kecil agar tidak “rebutan” dengan MarkerLayer)
             batasKota.when(async () => {
               const count = await batasKota.queryFeatureCount();
               console.log("Feature count (layer siap):", count);
@@ -184,17 +168,16 @@ export default function App() {
               }
             });
 
-            // detail error rendering
-            view.on("layerview-create-error", (e) => {
-              console.error("LayerView error detail:", e.error);
-            });
+            view.on("layerview-create-error", (e) =>
+              console.error("LayerView error detail:", e.error)
+            );
           } catch (err) {
             console.error("Gagal memuat layer batas kota:", err);
           }
         }}
       />
 
-      {/* Matikan autoFit dulu agar kamera nggak “rebutan” */}
+      {/* Saat debug: autoFit dimatikan supaya kamera tidak rebutan */}
       <MarkerLayer
         map={map}
         view={view as any}
